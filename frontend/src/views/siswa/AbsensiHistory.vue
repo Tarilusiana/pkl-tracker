@@ -43,22 +43,31 @@
       </div>
     </div>
 
+    <!-- Loading -->
+    <div v-if="loading" class="text-center py-8 text-gray-400 text-sm">Memuat...</div>
+
+    <!-- Empty -->
+    <div v-else-if="filteredHistory.length === 0" class="text-center py-8">
+      <ClockIcon :size="40" class="mx-auto mb-2 text-gray-300" />
+      <p class="text-sm text-gray-400">Belum ada riwayat absensi</p>
+    </div>
+
     <!-- List -->
-    <div class="space-y-2">
+    <div v-else class="space-y-2">
       <div
-        v-for="a in history"
-        :key="a.id"
+        v-for="a in filteredHistory"
+        :key="a.ID || a.id"
         class="bg-white rounded-xl p-4 border border-gray-100 flex items-center gap-3"
       >
-        <div :class="['w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0', statusIconBg(a.status)]">
-          <component :is="statusIcon(a.status)" :size="18" :class="statusIconColor(a.status)" />
+        <div :class="['w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0', statusIconBg(a.Status || a.status)]">
+          <component :is="statusIcon(a.Status || a.status)" :size="18" :class="statusIconColor(a.Status || a.status)" />
         </div>
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-gray-800">{{ a.date }}</p>
-          <p class="text-xs text-gray-500">{{ a.time }} - {{ a.location?.slice(0, 20) }}...</p>
+          <p class="text-sm font-medium text-gray-800">{{ formatDate(a.Timestamp || a.timestamp) }}</p>
+          <p class="text-xs text-gray-500">{{ formatTime(a.Timestamp || a.timestamp) }} - {{ (a.Latitude ?? a.latitude)?.toFixed(4) }}, {{ (a.Longitude ?? a.longitude)?.toFixed(4) }}</p>
         </div>
-        <span :class="['inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-medium', statusBadgeStyle(a.status)]">
-          {{ statusLabel(a.status) }}
+        <span :class="['inline-flex px-2.5 py-0.5 rounded-full text-[10px] font-medium', statusBadgeStyle(a.Status || a.status)]">
+          {{ statusLabel(a.Status || a.status) }}
         </span>
         <ChevronRightIcon :size="16" class="text-gray-300" />
       </div>
@@ -67,13 +76,15 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import {
   ArrowLeftIcon, ChevronLeftIcon, ChevronRightIcon,
   CheckCircleIcon, ClockIcon, FileTextIcon, HeartIcon, AlertCircleIcon
 } from 'lucide-vue-next'
 
 const monthOffset = ref(0)
+const history = ref([])
+const loading = ref(true)
 
 const currentMonth = computed(() => {
   const d = new Date()
@@ -81,19 +92,58 @@ const currentMonth = computed(() => {
   return d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })
 })
 
+const filteredHistory = computed(() => {
+  const d = new Date()
+  d.setMonth(d.getMonth() - monthOffset.value)
+  const targetMonth = d.getMonth()
+  const targetYear = d.getFullYear()
+  return history.value.filter((a) => {
+    const t = new Date(a.Timestamp || a.timestamp)
+    return t.getMonth() === targetMonth && t.getFullYear() === targetYear
+  })
+})
+
+const summary = computed(() => {
+  const items = filteredHistory.value
+  return {
+    hadir: items.filter((a) => (a.Status || a.status) === 'hadir').length,
+    terlambat: items.filter((a) => (a.Status || a.status) === 'terlambat').length,
+    izin: items.filter((a) => (a.Status || a.status) === 'izin').length,
+    sakit: items.filter((a) => (a.Status || a.status) === 'sakit').length,
+  }
+})
+
+function formatDate(ts) {
+  const t = new Date(ts)
+  return t.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+function formatTime(ts) {
+  const t = new Date(ts)
+  return t.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }) + ' WIB'
+}
+
 function prevMonth() { monthOffset.value++ }
 function nextMonth() { if (monthOffset.value > 0) monthOffset.value-- }
 
-const summary = { hadir: 20, terlambat: 2, izin: 1, sakit: 1 }
+async function fetchHistory() {
+  loading.value = true
+  try {
+    const token = localStorage.getItem('token')
+    const res = await fetch('/api/absensi/history', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (!res.ok) throw new Error('Gagal memuat riwayat')
+    const json = await res.json()
+    history.value = json.data || []
+  } catch (e) {
+    console.error(e)
+  } finally {
+    loading.value = false
+  }
+}
 
-const history = [
-  { id: 1, date: '14 Mei 2026', time: '07:45 WIB', location: '-6.2088, 106.8456', status: 'hadir' },
-  { id: 2, date: '13 Mei 2026', time: '08:15 WIB', location: '-6.2088, 106.8456', status: 'terlambat' },
-  { id: 3, date: '12 Mei 2026', time: '07:30 WIB', location: '-6.2088, 106.8456', status: 'hadir' },
-  { id: 4, date: '11 Mei 2026', time: '-', location: '-', status: 'izin' },
-  { id: 5, date: '10 Mei 2026', time: '-', location: '-', status: 'sakit' },
-  { id: 6, date: '9 Mei 2026', time: '07:50 WIB', location: '-6.2088, 106.8456', status: 'hadir' },
-]
+onMounted(fetchHistory)
 
 function statusLabel(s) {
   return { hadir: 'Hadir', terlambat: 'Terlambat', izin: 'Izin', sakit: 'Sakit' }[s]

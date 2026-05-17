@@ -48,12 +48,39 @@ func (h *JurnalHandler) Create(c *gin.Context) {
 		return
 	}
 
-	date, err := time.Parse("2006-01-02", req.Date)
+	loc := time.FixedZone("WIB", 7*3600)
+	date, err := time.ParseInLocation("2006-01-02", req.Date, loc)
 	if err != nil {
-		date = time.Now()
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Format tanggal tidak valid (YYYY-MM-DD)"})
+		return
+	}
+
+	// Gunakan waktu server
+	now := time.Now().In(loc)
+	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
+
+	// Jurnal tidak boleh di masa depan
+	if date.After(today) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Tidak bisa membuat jurnal untuk tanggal yang akan datang"})
+		return
+	}
+
+	// Maksimal 10 hari ke belakang
+	maxBack := today.AddDate(0, 0, -10)
+	if date.Before(maxBack) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Maksimal mengisi jurnal 10 hari ke belakang"})
+		return
 	}
 
 	uid, _ := uuid.Parse(userID.(string))
+
+	// Cek sudah ada jurnal untuk tanggal tersebut?
+	var count int64
+	database.DB.Model(&models.Jurnal{}).Where("student_id = ? AND date = ?", uid, date).Count(&count)
+	if count > 0 {
+		c.JSON(http.StatusConflict, gin.H{"error": "Anda sudah mengisi jurnal untuk tanggal " + req.Date})
+		return
+	}
 
 	jurnal := models.Jurnal{
 		StudentID:  uid,

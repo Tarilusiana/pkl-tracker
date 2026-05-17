@@ -1,13 +1,13 @@
-# Deploy PKL Tracker — Single Binary (no Nginx, no Node.js on VPS)
+# Deploy PKL Tracker — Single Binary (no Node.js on VPS)
 
 ## Perbandingan dengan Deploy Standar
 
 | Aspek | Deploy Standar (DEPLOY.md) | Single Binary (ini) |
 |---|---|---|
-| Install di VPS | Go SDK + Node.js + Nginx + PostgreSQL | PostgreSQL saja |
+| Install di VPS | Go SDK + Node.js + Nginx + PostgreSQL | PostgreSQL + Nginx |
 | Frontend | Dilayani Nginx dari `dist/` | Ditanam ke binary Go via `embed` |
-| HTTPS | Nginx + Certbot | Caddy (reverse proxy ringan) |
-| Proses | 2 proses (Go binary + Nginx) | 1 proses (binary + Caddy) |
+| HTTPS | Nginx + Certbot | Nginx + Certbot (Let's Encrypt) |
+| Proses | 2 proses (Go binary + Nginx) | 2 proses (binary + Nginx) |
 | VPS RAM | Minimal 1 GB | Minimal 512 MB |
 | Update | git pull + go build + npm build | `make build` di laptop → scp binary |
 
@@ -53,14 +53,13 @@ EOF
 
 ---
 
-## Langkah 3: Install Caddy (Reverse Proxy + HTTPS Otomatis)
+## Langkah 3: Install Nginx + Certbot (Reverse Proxy + HTTPS)
 
 ```bash
-sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
-curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
-sudo apt update
-sudo apt install -y caddy
+ssh user@ip-vps-anda
+
+sudo apt install -y nginx certbot python3-certbot-nginx
+sudo systemctl enable --now nginx
 ```
 
 ---
@@ -128,31 +127,61 @@ curl http://localhost:8082/api/login -X POST \
 
 ---
 
-## Langkah 6: Setup Caddy (HTTPS + Reverse Proxy)
+## Langkah 6: Setup Nginx Reverse Proxy
+
+Buat konfigurasi Nginx:
 
 ```bash
-sudo nano /etc/caddy/Caddyfile
+sudo nano /etc/nginx/sites-available/pkl-tracker
 ```
 
-Isi (ganti domain):
+Isi (ganti `pkl.sekolah-anda.sch.id` dengan domain anda):
 
-```
-pkl.sekolah-anda.sch.id {
-    reverse_proxy localhost:8082
+```nginx
+server {
+    listen 80;
+    server_name pkl.sekolah-anda.sch.id;
+
+    client_max_body_size 50M;
+
+    location / {
+        proxy_pass http://127.0.0.1:8082;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /uploads/ {
+        proxy_pass http://127.0.0.1:8082;
+        proxy_set_header Host $host;
+    }
 }
 ```
 
-> Caddy otomatis mengurus sertifikat SSL Let's Encrypt. Tidak perlu `certbot --nginx` lagi.
-
-Reload:
+Aktifkan site:
 
 ```bash
-sudo systemctl reload caddy
+sudo ln -sf /etc/nginx/sites-available/pkl-tracker /etc/nginx/sites-enabled/
+sudo rm -f /etc/nginx/sites-enabled/default
+sudo nginx -t
+sudo systemctl reload nginx
 ```
+
+## Langkah 7: Aktifkan HTTPS dengan Certbot
+
+```bash
+sudo certbot --nginx -d pkl.sekolah-anda.sch.id
+```
+
+> Certbot otomatis mengambil sertifikat Let's Encrypt dan memperbarui konfigurasi Nginx. Sertifikat diperpanjang otomatis via cron/systemd timer.
 
 ---
 
-## Langkah 7: Buka Firewall
+## Langkah 8: Buka Firewall
 
 ```bash
 sudo ufw allow 22/tcp
@@ -196,7 +225,8 @@ ssh user@vps "sudo systemctl restart pkl-tracker"
 └── pkl-server          ← satu-satunya file (binary ~32 MB)
 
 /etc/systemd/system/pkl-tracker.service
-/etc/caddy/Caddyfile
+/etc/nginx/sites-available/pkl-tracker
+/etc/nginx/sites-enabled/pkl-tracker -> ../sites-available/pkl-tracker
 ```
 
 ---
@@ -217,11 +247,19 @@ sudo systemctl status postgresql
 PGPASSWORD='password_anda' psql -U pkl_user -h 127.0.0.1 -d pkl_db -c "SELECT 1;"
 ```
 
-### Caddy gagal
+### Nginx gagal
 
 ```bash
-sudo systemctl status caddy
-sudo journalctl -u caddy -f
+sudo systemctl status nginx
+sudo journalctl -u nginx -f
+sudo nginx -t
+```
+
+### SSL / Certbot gagal
+
+```bash
+sudo certbot --nginx -d pkl.sekolah-anda.sch.id --dry-run
+sudo certbot renew --dry-run
 ```
 
 ### Integrasi Google Drive
@@ -246,6 +284,5 @@ ssh user@vps "sudo systemctl daemon-reload && sudo systemctl restart pkl-tracker
 
 1. **VPS lebih kecil** — tidak perlu install Go SDK (200+ MB) atau Node.js (100+ MB)
 2. **Deploy lebih cepat** — 1 file SCP, bukan 3 langkah build di VPS
-3. **Lebih aman** — tidak ada Nginx config yang bisa salah konfigurasi, binary self-contained
-4. **Caddy > Certbot** — HTTPS otomatis, konfigurasi 2 baris
-5. **Atomic deploy** — binary baru langsung aktif setelah `systemctl restart`, tidak ada momen frontend/backend tidak sinkron
+3. **Lebih aman** — binary self-contained, tidak perlu expose port aplikasi langsung ke internet
+4. **Atomic deploy** — binary baru langsung aktif setelah `systemctl restart`, tidak ada momen frontend/backend tidak sinkron

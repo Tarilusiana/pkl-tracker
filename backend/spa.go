@@ -34,23 +34,28 @@ func spaMiddleware() gin.HandlerFunc {
 			sanitized = "/" + sanitized
 		}
 
-		f, err := sub.Open(strings.TrimPrefix(sanitized, "/"))
-		if err != nil {
-			c.Request.URL.Path = "/index.html"
-		} else {
-			f.Close()
+		openPath := strings.TrimPrefix(sanitized, "/")
+
+		if openPath != "" {
+			f, err := sub.Open(openPath)
+			if err == nil {
+				f.Close()
+				ext := filepath.Ext(c.Request.URL.Path)
+				if ext == ".js" {
+					c.Header("Content-Type", "application/javascript")
+				} else if ext == ".css" {
+					c.Header("Content-Type", "text/css")
+				} else if mimeType := mime.TypeByExtension(ext); mimeType != "" {
+					c.Header("Content-Type", mimeType)
+				}
+				fileServer.ServeHTTP(c.Writer, c.Request)
+				c.Abort()
+				return
+			}
 		}
 
-		ext := filepath.Ext(c.Request.URL.Path)
-		if ext == ".js" {
-			c.Header("Content-Type", "application/javascript")
-		} else if ext == ".css" {
-			c.Header("Content-Type", "text/css")
-		} else if mimeType := mime.TypeByExtension(ext); mimeType != "" {
-			c.Header("Content-Type", mimeType)
-		}
-
-		fileServer.ServeHTTP(c.Writer, c.Request)
+		c.Header("Content-Type", "text/html; charset=utf-8")
+		http.ServeFileFS(c.Writer, c.Request, sub, "index.html")
 		c.Abort()
 	}
 }

@@ -7,7 +7,8 @@
           <GraduationCap :size="32" class="text-white" />
         </div>
         <h1 class="text-2xl font-bold text-white">PKL Tracker</h1>
-        <p class="text-gray-300 text-sm mt-1">Manajemen Praktik Kerja Lapangan</p>
+        <p class="text-gray-200 text-base mt-1 font-medium">SMKN 1 Arahan</p>
+        <p class="text-gray-300 text-sm mt-0.5">Indramayu - Jawa Barat</p>
       </div>
 
       <!-- Card -->

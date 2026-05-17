@@ -180,11 +180,6 @@ const routes = [
         component: () => import('../views/siswa/JurnalForm.vue')
       },
       {
-        path: 'nilai',
-        name: 'SiswaNilai',
-        component: () => import('../views/siswa/NilaiView.vue')
-      },
-      {
         path: 'profile',
         name: 'SiswaProfile',
         component: () => import('../views/siswa/ProfileView.vue')

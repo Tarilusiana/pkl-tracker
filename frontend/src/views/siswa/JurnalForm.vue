@@ -12,10 +12,12 @@
 
     <form @submit.prevent="handleSubmit" class="space-y-4">
       <div class="bg-white rounded-2xl p-5 border border-gray-100">
-        <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Kegiatan</label>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Tanggal Kegiatan <span class="text-xs text-gray-400">(maks. 10 hari kebelakang)</span></label>
         <input
           v-model="form.date"
           type="date"
+          :max="todayStr"
+          :min="maxBackStr"
           required
           class="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none"
         />
@@ -81,13 +83,20 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { ArrowLeftIcon, LoaderIcon, CheckCircleIcon } from 'lucide-vue-next'
 
 const loading = ref(false)
 const success = ref(false)
 
 const todayDate = new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+
+const todayStr = computed(() => new Date().toISOString().split('T')[0])
+const maxBackStr = computed(() => {
+  const d = new Date()
+  d.setDate(d.getDate() - 10)
+  return d.toISOString().split('T')[0]
+})
 
 const form = reactive({
   date: new Date().toISOString().split('T')[0],

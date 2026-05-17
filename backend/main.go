@@ -56,6 +56,7 @@ func main() {
 		absensiHandler := handlers.NewAbsensiHandler()
 		protected.POST("/absensi", absensiHandler.Create)
 		protected.GET("/absensi/history", absensiHandler.History)
+		protected.GET("/absensi/status", absensiHandler.Status)
 		protected.PUT("/absensi/:id/verify", absensiHandler.Verify)
 
 		jurnalHandler := handlers.NewJurnalHandler()
@@ -157,10 +158,10 @@ func seedDatabase() {
 
 	now := time.Now()
 	absensiList := []models.Absensi{
-		{StudentID: student1ID, Timestamp: time.Date(now.Year(), now.Month(), now.Day(), 7, 45, 0, 0, time.UTC), Latitude: -6.2088, Longitude: 106.8456, Status: "hadir", IsVerified: true},
-		{StudentID: student1ID, Timestamp: time.Date(now.Year(), now.Month(), now.Day()-1, 8, 15, 0, 0, time.UTC), Latitude: -6.2088, Longitude: 106.8456, Status: "terlambat", IsVerified: true},
-		{StudentID: student1ID, Timestamp: time.Date(now.Year(), now.Month(), now.Day()-2, 7, 30, 0, 0, time.UTC), Latitude: -6.2088, Longitude: 106.8456, Status: "hadir", IsVerified: true},
-		{StudentID: student2ID, Timestamp: time.Date(now.Year(), now.Month(), now.Day()-1, 7, 50, 0, 0, time.UTC), Latitude: -6.2297, Longitude: 106.8243, Status: "hadir", IsVerified: true},
+		{StudentID: student1ID, Timestamp: time.Date(now.Year(), now.Month(), now.Day(), 7, 45, 0, 0, time.UTC), Latitude: -6.2088, Longitude: 106.8456, Type: "masuk", Status: "hadir", IsVerified: true},
+		{StudentID: student1ID, Timestamp: time.Date(now.Year(), now.Month(), now.Day()-1, 8, 15, 0, 0, time.UTC), Latitude: -6.2088, Longitude: 106.8456, Type: "masuk", Status: "hadir", IsVerified: true},
+		{StudentID: student1ID, Timestamp: time.Date(now.Year(), now.Month(), now.Day()-2, 7, 30, 0, 0, time.UTC), Latitude: -6.2088, Longitude: 106.8456, Type: "masuk", Status: "hadir", IsVerified: true},
+		{StudentID: student2ID, Timestamp: time.Date(now.Year(), now.Month(), now.Day()-1, 7, 50, 0, 0, time.UTC), Latitude: -6.2297, Longitude: 106.8243, Type: "masuk", Status: "hadir", IsVerified: true},
 	}
 
 	for _, a := range absensiList {

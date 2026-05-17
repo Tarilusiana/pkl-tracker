@@ -6,7 +6,7 @@
     </div>
 
     <!-- Quick Stats -->
-    <div class="grid grid-cols-3 gap-3 mb-5">
+    <div class="grid grid-cols-2 gap-3 mb-5">
       <div class="bg-white rounded-xl p-4 border border-gray-100 text-center">
         <p class="text-2xl font-bold text-accent">{{ stats.hadir }}</p>
         <p class="text-[10px] text-gray-500 mt-1">Hadir</p>
@@ -14,10 +14,6 @@
       <div class="bg-white rounded-xl p-4 border border-gray-100 text-center">
         <p class="text-2xl font-bold text-gray-800">{{ stats.jurnal }}</p>
         <p class="text-[10px] text-gray-500 mt-1">Jurnal</p>
-      </div>
-      <div class="bg-white rounded-xl p-4 border border-gray-100 text-center">
-        <p class="text-2xl font-bold text-warning">{{ stats.nilai || '?' }}</p>
-        <p class="text-[10px] text-gray-500 mt-1">Nilai</p>
       </div>
     </div>
 
@@ -63,7 +59,13 @@
       </router-link>
     </div>
 
-    <div class="space-y-3 mb-5">
+    <div v-if="loadingJournals" class="text-center py-8 text-gray-400 text-sm">Memuat...</div>
+
+    <div v-else-if="recentJournals.length === 0" class="text-center py-8">
+      <p class="text-sm text-gray-400 mb-3">Belum ada jurnal. Mulai tulis sekarang!</p>
+    </div>
+
+    <div v-else class="space-y-3 mb-5">
       <div
         v-for="j in recentJournals"
         :key="j.id"
@@ -90,13 +92,16 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../../stores/auth'
 import { CheckCircleIcon, ClockIcon, XCircleIcon, CameraIcon, PlusIcon } from 'lucide-vue-next'
 
 const authStore = useAuthStore()
 
-const todayStatus = ref('pending') // 'hadir' | 'pending' | 'alpa'
+const todayStatus = ref('pending')
+const stats = ref({ hadir: 0, jurnal: 0 })
+const recentJournals = ref([])
+const loadingJournals = ref(true)
 
 const todayDate = computed(() => {
   return new Date().toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
@@ -114,11 +119,59 @@ const todayStatusStyle = computed(() => ({
   alpa: 'bg-danger/10 text-danger'
 }[todayStatus.value]))
 
-const stats = { hadir: 42, jurnal: 38, nilai: 'A' }
+async function fetchTodayStatus() {
+  try {
+    const token = localStorage.getItem('token')
+    const res = await fetch('/api/absensi/status', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    if (!res.ok) return
+    const data = await res.json()
+    todayStatus.value = data.has_masuk ? 'hadir' : 'pending'
+  } catch (e) {
+    console.error(e)
+  }
+}
 
-const recentJournals = [
-  { id: 1, date: '14 Mei 2026', activity: 'Mempelajari framework Laravel dan membuat CRUD sederhana untuk modul inventaris.', hasComment: true },
-  { id: 2, date: '13 Mei 2026', activity: 'Debugging aplikasi internal perusahaan. Memperbaiki bug pada modul pelaporan.', hasComment: false },
-  { id: 3, date: '12 Mei 2026', activity: 'Meeting dengan tim developer, membahas sprint planning minggu depan.', hasComment: true },
-]
+async function fetchStats() {
+  try {
+    const token = localStorage.getItem('token')
+    const headers = { Authorization: `Bearer ${token}` }
+
+    let hadir = 0
+    try {
+      const res = await fetch('/api/absensi/history', { headers })
+      if (res.ok) {
+        const json = await res.json()
+        hadir = (json.data || []).filter(a => (a.Type || a.type) === 'masuk').length
+      }
+    } catch (e) { console.error(e) }
+
+    let jurnalCount = 0
+    try {
+      const res = await fetch('/api/jurnal', { headers })
+      if (res.ok) {
+        const json = await res.json()
+        jurnalCount = (json.data || []).length
+        recentJournals.value = (json.data || []).slice(0, 3).map(j => ({
+          id: j.ID || j.id,
+          date: new Date(j.Date || j.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
+          activity: j.Activity || j.activity,
+          hasComment: !!(j.TeacherComment || j.DudiComment || j.teacherComment || j.dudiComment)
+        }))
+      }
+    } catch (e) { console.error(e) }
+
+    stats.value = { hadir, jurnal: jurnalCount }
+  } catch (e) {
+    console.error(e)
+  } finally {
+    loadingJournals.value = false
+  }
+}
+
+onMounted(() => {
+  fetchTodayStatus()
+  fetchStats()
+})
 </script>

@@ -58,7 +58,7 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import {
-  LayoutDashboard, ClipboardCheck, BookOpen, Award,
+  LayoutDashboard, ClipboardCheck, BookOpen,
   Users, PenTool, BellIcon, UserIcon
 } from 'lucide-vue-next'
 
@@ -79,7 +79,6 @@ const pageTitle = computed(() => {
     'SiswaAbsensiHistory': 'Riwayat Absensi',
     'SiswaJurnal': 'Jurnal',
     'SiswaJurnalTulis': 'Tulis Jurnal',
-    'SiswaNilai': 'Nilai PKL',
     'SiswaProfile': 'Profil',
     'DudiDashboard': 'Dashboard',
     'DudiSiswa': 'Daftar Siswa',
@@ -94,7 +93,6 @@ const siswaMenu = [
   { to: '/siswa', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/siswa/absensi', label: 'Absensi', icon: ClipboardCheck },
   { to: '/siswa/jurnal', label: 'Jurnal', icon: BookOpen },
-  { to: '/siswa/nilai', label: 'Nilai', icon: Award },
   { to: '/siswa/profile', label: 'Profil', icon: UserIcon },
 ]
 
