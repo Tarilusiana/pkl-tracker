@@ -38,6 +38,9 @@
             <h3 class="font-semibold text-gray-800">{{ d.company_name }}</h3>
             <p class="text-xs text-gray-500 mt-0.5">{{ d.pic_name || 'Belum ada PIC' }}</p>
             <p v-if="d.jurusan" class="text-xs text-gray-400 mt-0.5">Jurusan: {{ d.jurusan }}</p>
+            <p v-if="d.dudi_niks && d.dudi_niks.length > 0" class="text-xs text-gray-400 mt-0.5 font-mono">
+              NIK: {{ d.dudi_niks.join(', ') }}
+            </p>
           </div>
           <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-blue-50 text-blue-600">
             <UsersIcon :size="12" /> {{ d.student_count || 0 }}

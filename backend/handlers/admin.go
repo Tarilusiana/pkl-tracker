@@ -478,7 +478,8 @@ func (h *AdminHandler) ListDUDI(c *gin.Context) {
 
 	type DUDIWithStudentCount struct {
 		models.DUDI
-		StudentCount int64 `json:"student_count"`
+		StudentCount int64    `json:"student_count"`
+		DudiNIKs     []string `json:"dudi_niks"`
 	}
 
 	result := make([]DUDIWithStudentCount, len(dudiList))
@@ -486,6 +487,14 @@ func (h *AdminHandler) ListDUDI(c *gin.Context) {
 		var count int64
 		database.DB.Model(&models.User{}).Where("dudi_id = ?", d.ID).Count(&count)
 		result[i] = DUDIWithStudentCount{DUDI: d, StudentCount: count}
+
+		var dudiUsers []models.User
+		database.DB.Where("dudi_id = ? AND role = 'dudi'", d.ID).Find(&dudiUsers)
+		niks := make([]string, len(dudiUsers))
+		for j, u := range dudiUsers {
+			niks[j] = u.NisNipNik
+		}
+		result[i].DudiNIKs = niks
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": result})
