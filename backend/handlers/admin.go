@@ -191,8 +191,10 @@ func (h *AdminHandler) UpdateUser(c *gin.Context) {
 	if req.Role != "" {
 		user.Role = req.Role
 	}
-	if isAdmin && req.Jurusan != "" {
+	if isAdmin {
 		user.Jurusan = req.Jurusan
+	} else if adminJurusan != "" {
+		user.Jurusan = adminJurusan
 	}
 	if req.DudiID != "" {
 		dudiID, err := uuid.Parse(req.DudiID)
@@ -567,8 +569,10 @@ func (h *AdminHandler) UpdateDUDI(c *gin.Context) {
 	dudi.RadiusAllowed = req.RadiusAllowed
 	dudi.PicName = req.PicName
 	dudi.Phone = req.Phone
-	if isAdmin && req.Jurusan != "" {
+	if isAdmin {
 		dudi.Jurusan = req.Jurusan
+	} else if adminJurusan != "" {
+		dudi.Jurusan = adminJurusan
 	}
 
 	database.DB.Save(&dudi)
