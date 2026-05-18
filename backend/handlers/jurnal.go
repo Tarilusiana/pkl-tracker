@@ -113,7 +113,12 @@ func (h *JurnalHandler) List(c *gin.Context) {
 		studentID := c.Query("student_id")
 		jurusanFilter := c.Query("jurusan")
 
-		if role == "admin_jurusan" && jurusan != nil && jurusan.(string) != "" {
+		if role == "dudi" {
+			var dudiUser models.User
+			if database.DB.First(&dudiUser, "id = ?", uid).Error == nil && dudiUser.DudiID != nil {
+				query = query.Joins("JOIN users ON users.id = jurnals.student_id").Where("users.dudi_id = ?", dudiUser.DudiID)
+			}
+		} else if role == "admin_jurusan" && jurusan != nil && jurusan.(string) != "" {
 			query = query.Joins("JOIN users ON users.id = jurnals.student_id").Where("users.jurusan = ?", jurusan.(string))
 		} else if jurusanFilter != "" {
 			query = query.Joins("JOIN users ON users.id = jurnals.student_id").Where("users.jurusan = ?", jurusanFilter)
