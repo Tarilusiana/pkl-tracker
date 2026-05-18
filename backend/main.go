@@ -102,6 +102,10 @@ func main() {
 		protected.PUT("/admin/periode/:id", adminHandler.UpdatePeriode)
 		protected.PUT("/admin/periode/:id/activate", adminHandler.ActivatePeriode)
 		protected.DELETE("/admin/periode/:id", adminHandler.DeletePeriode)
+		protected.GET("/admin/jurusan", adminHandler.ListJurusan)
+		protected.POST("/admin/jurusan", adminHandler.CreateJurusan)
+		protected.PUT("/admin/jurusan/:id", adminHandler.UpdateJurusan)
+		protected.DELETE("/admin/jurusan/:id", adminHandler.DeleteJurusan)
 	}
 
 	log.Printf("Server starting on port %s", cfg.ServerPort)

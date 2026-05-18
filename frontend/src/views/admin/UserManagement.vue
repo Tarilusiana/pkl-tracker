@@ -38,11 +38,7 @@
       </select>
       <select v-model="jurusanFilter" @change="fetchUsers" class="px-3 py-2 rounded-xl border border-gray-200 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none">
         <option value="">Semua Jurusan</option>
-        <option value="RPL">RPL</option>
-        <option value="TKJ">TKJ</option>
-        <option value="MM">MM</option>
-        <option value="AKL">AKL</option>
-        <option value="OTKP">OTKP</option>
+        <option v-for="j in jurusanOptions" :key="j.kode" :value="j.kode">{{ j.kode }} - {{ j.nama }}</option>
       </select>
     </div>
 
@@ -130,11 +126,7 @@
             <label class="block text-xs font-medium text-gray-600 mb-1">Jurusan</label>
             <select v-model="form.jurusan" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none">
               <option value="">-- Pilih Jurusan --</option>
-              <option value="RPL">RPL</option>
-              <option value="TKJ">TKJ</option>
-              <option value="MM">MM</option>
-              <option value="AKL">AKL</option>
-              <option value="OTKP">OTKP</option>
+              <option v-for="j in jurusanOptions" :key="j.kode" :value="j.kode">{{ j.kode }} - {{ j.nama }}</option>
             </select>
           </div>
           <div v-if="form.role === 'student' || form.role === 'dudi'">
@@ -199,6 +191,7 @@ import CsvImport from '@/components/CsvImport.vue'
 
 const users = ref([])
 const dudiList = ref([])
+const jurusanOptions = ref([])
 const loading = ref(true)
 const saving = ref(false)
 const search = ref('')
@@ -266,6 +259,10 @@ async function fetchUsers() {
   } finally {
     loading.value = false
   }
+}
+
+async function fetchJurusan() {
+  try { const res = await get('/admin/jurusan'); jurusanOptions.value = res.data } catch (e) { /* ignore */ }
 }
 
 async function fetchDudi() {
@@ -345,5 +342,5 @@ async function bulkDelete() {
 
 function openImport(key) { importKey.value = key; showImportDropdown.value = false }
 
-onMounted(fetchUsers)
+onMounted(() => { fetchUsers(); fetchJurusan() })
 </script>

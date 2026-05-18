@@ -56,6 +56,12 @@ const routes = [
         meta: { title: 'Periode' }
       },
       {
+        path: 'jurusan',
+        name: 'JurusanDaftar',
+        component: () => import('../views/admin/JurusanManagement.vue'),
+        meta: { title: 'Data Jurusan' }
+      },
+      {
         path: 'reports',
         name: 'JurusanReports',
         component: () => import('../views/admin/ReportsView.vue'),
@@ -95,6 +101,11 @@ const routes = [
         path: 'periode',
         name: 'AdminPeriode',
         component: () => import('../views/admin/PeriodeManagement.vue')
+      },
+      {
+        path: 'jurusan',
+        name: 'AdminJurusan',
+        component: () => import('../views/admin/JurusanManagement.vue')
       },
       {
         path: 'reports',

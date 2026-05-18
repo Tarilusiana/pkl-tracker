@@ -782,3 +782,118 @@ func (h *AdminHandler) DeletePeriode(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Period deleted"})
 }
+
+// --- Jurusan ---
+
+type JurusanRequest struct {
+	Nama string `json:"nama" binding:"required"`
+	Kode string `json:"kode" binding:"required"`
+}
+
+func (h *AdminHandler) ListJurusan(c *gin.Context) {
+	_, adminJurusan := checkAdminAccess(c)
+	role, _ := c.Get("role")
+	if role != "admin" && role != "admin_jurusan" && role != "teacher" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Access denied"})
+		return
+	}
+	_ = adminJurusan
+
+	var list []models.Jurusan
+	database.DB.Order("nama ASC").Find(&list)
+	if list == nil {
+		list = []models.Jurusan{}
+	}
+	c.JSON(http.StatusOK, gin.H{"data": list})
+}
+
+func (h *AdminHandler) CreateJurusan(c *gin.Context) {
+	isAdmin, _ := checkAdminAccess(c)
+	if !isAdmin {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Only admin can manage jurusan"})
+		return
+	}
+
+	var req JurusanRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var existing models.Jurusan
+	if database.DB.Where("kode = ? OR nama = ?", req.Kode, req.Nama).First(&existing).Error == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Jurusan dengan kode atau nama tersebut sudah ada"})
+		return
+	}
+
+	j := models.Jurusan{Nama: req.Nama, Kode: req.Kode}
+	if err := database.DB.Create(&j).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Gagal membuat jurusan"})
+		return
+	}
+	c.JSON(http.StatusCreated, gin.H{"message": "Jurusan created", "data": j})
+}
+
+func (h *AdminHandler) UpdateJurusan(c *gin.Context) {
+	isAdmin, _ := checkAdminAccess(c)
+	if !isAdmin {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Only admin can manage jurusan"})
+		return
+	}
+
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
+	var j models.Jurusan
+	if database.DB.First(&j, "id = ?", id).Error != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Jurusan not found"})
+		return
+	}
+
+	var req JurusanRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var dup models.Jurusan
+	if database.DB.Where("(kode = ? OR nama = ?) AND id != ?", req.Kode, req.Nama, id).First(&dup).Error == nil {
+		c.JSON(http.StatusConflict, gin.H{"error": "Jurusan dengan kode atau nama tersebut sudah ada"})
+		return
+	}
+
+	j.Nama = req.Nama
+	j.Kode = req.Kode
+	database.DB.Save(&j)
+	c.JSON(http.StatusOK, gin.H{"message": "Jurusan updated", "data": j})
+}
+
+func (h *AdminHandler) DeleteJurusan(c *gin.Context) {
+	isAdmin, _ := checkAdminAccess(c)
+	if !isAdmin {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Only admin can manage jurusan"})
+		return
+	}
+
+	id, err := uuid.Parse(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID"})
+		return
+	}
+
+	var count int64
+	database.DB.Model(&models.User{}).Where("jurusan = (SELECT kode FROM jurusans WHERE id = ?)", id).Count(&count)
+	if count > 0 {
+		c.JSON(http.StatusConflict, gin.H{"error": "Tidak bisa menghapus jurusan yang masih digunakan oleh pengguna"})
+		return
+	}
+
+	if database.DB.Delete(&models.Jurusan{}, "id = ?", id).RowsAffected == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Jurusan not found"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Jurusan deleted"})
+}

@@ -29,6 +29,7 @@ func Connect(cfg *config.Config) {
 		&models.Jurnal{},
 		&models.Penilaian{},
 		&models.Periode{},
+		&models.Jurusan{},
 	)
 	if err != nil {
 		log.Fatal("Failed to migrate database:", err)

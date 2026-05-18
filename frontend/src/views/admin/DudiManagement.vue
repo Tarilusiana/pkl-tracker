@@ -23,11 +23,7 @@
       </div>
       <select v-model="jurusanFilter" @change="fetchDudi" class="px-3 py-2 rounded-xl border border-gray-200 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none">
         <option value="">Semua Jurusan</option>
-        <option value="RPL">RPL</option>
-        <option value="TKJ">TKJ</option>
-        <option value="MM">MM</option>
-        <option value="AKL">AKL</option>
-        <option value="OTKP">OTKP</option>
+        <option v-for="j in jurusanOptions" :key="j.kode" :value="j.kode">{{ j.kode }} - {{ j.nama }}</option>
       </select>
     </div>
 
@@ -105,11 +101,7 @@
             <label class="block text-xs font-medium text-gray-600 mb-1">Jurusan</label>
             <select v-model="form.jurusan" class="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none">
               <option value="">-- Pilih Jurusan --</option>
-              <option value="RPL">RPL</option>
-              <option value="TKJ">TKJ</option>
-              <option value="MM">MM</option>
-              <option value="AKL">AKL</option>
-              <option value="OTKP">OTKP</option>
+              <option v-for="j in jurusanOptions" :key="j.kode" :value="j.kode">{{ j.kode }} - {{ j.nama }}</option>
             </select>
           </div>
           <div class="flex gap-2 pt-2">
@@ -151,6 +143,7 @@ import { get, post, put, del } from '@/api'
 import CsvImport from '@/components/CsvImport.vue'
 
 const dudiList = ref([])
+const jurusanOptions = ref([])
 const loading = ref(true)
 const saving = ref(false)
 const search = ref('')
@@ -164,6 +157,10 @@ const showImport = ref(false)
 const form = reactive({
   company_name: '', address: '', latitude: 0, longitude: 0, radius_allowed: 500, pic_name: '', phone: '', jurusan: ''
 })
+
+async function fetchJurusan() {
+  try { const res = await get('/admin/jurusan'); jurusanOptions.value = res.data } catch (e) { /* ignore */ }
+}
 
 async function fetchDudi() {
   loading.value = true
@@ -230,5 +227,5 @@ async function deleteDudi() {
   }
 }
 
-onMounted(fetchDudi)
+onMounted(() => { fetchDudi(); fetchJurusan() })
 </script>
