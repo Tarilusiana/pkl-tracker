@@ -61,27 +61,27 @@
           >
             <div class="flex items-start justify-between mb-2">
               <div>
-                <span class="text-sm font-semibold text-gray-800">{{ formatDate(j.Date) }}</span>
+                <span class="text-sm font-semibold text-gray-800">{{ formatDate(j.date) }}</span>
               </div>
             </div>
 
-            <p class="text-sm text-gray-700 mb-3">{{ j.Activity }}</p>
+            <p class="text-sm text-gray-700 mb-3">{{ j.activity }}</p>
 
-            <p v-if="j.Reflection" class="text-sm text-gray-500 italic mb-3">
-              "{{ j.Reflection }}"
+            <p v-if="j.reflection" class="text-sm text-gray-500 italic mb-3">
+              "{{ j.reflection }}"
             </p>
 
-            <div v-if="j.TeacherComment" class="mb-3 ml-3 pl-3 border-l-2 border-info/30">
+            <div v-if="j.teacher_comment" class="mb-3 ml-3 pl-3 border-l-2 border-info/30">
               <p class="text-xs text-gray-400 mb-0.5">Komentar Anda:</p>
-              <p class="text-sm text-gray-700">{{ j.TeacherComment }}</p>
+              <p class="text-sm text-gray-700">{{ j.teacher_comment }}</p>
             </div>
 
-            <div v-if="j.DudiComment" class="mb-3 ml-3 pl-3 border-l-2 border-warning/30">
+            <div v-if="j.dudi_comment" class="mb-3 ml-3 pl-3 border-l-2 border-warning/30">
               <p class="text-xs text-gray-400 mb-0.5">Komentar Instruktur:</p>
-              <p class="text-sm text-gray-700">{{ j.DudiComment }}</p>
+              <p class="text-sm text-gray-700">{{ j.dudi_comment }}</p>
             </div>
 
-            <div v-if="!j.TeacherComment" class="flex items-center gap-2 mt-2">
+            <div v-if="!j.teacher_comment" class="flex items-center gap-2 mt-2">
               <input
                 v-model="commentInputs[j.ID || j.id]"
                 type="text"
@@ -165,7 +165,7 @@ async function addComment(j) {
   commenting.value = true
   try {
     await post('/jurnal/comment', { jurnal_id: jid, comment })
-    j.TeacherComment = comment
+    j.teacher_comment = comment
     commentInputs[jid] = ''
   } catch (e) {
     alert(e.message)

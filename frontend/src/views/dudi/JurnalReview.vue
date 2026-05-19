@@ -31,32 +31,32 @@
           <div class="flex items-start justify-between mb-2">
             <div class="flex items-center gap-2">
               <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
-                {{ (j.Student?.FullName || '').charAt(0) }}
+                {{ (j.student?.full_name || '').charAt(0) }}
               </div>
               <div>
-                <p class="text-sm font-medium text-gray-800">{{ j.Student?.FullName }}</p>
-                <p class="text-[10px] text-gray-400">{{ formatDate(j.Date) }}</p>
+                <p class="text-sm font-medium text-gray-800">{{ j.student?.full_name }}</p>
+                <p class="text-[10px] text-gray-400">{{ formatDate(j.date) }}</p>
               </div>
             </div>
           </div>
 
-          <p class="text-sm text-gray-700 mb-3">{{ j.Activity }}</p>
+          <p class="text-sm text-gray-700 mb-3">{{ j.activity }}</p>
 
-          <div v-if="j.Reflection" class="mb-2 ml-2 pl-3 border-l-2 border-gray-200">
-            <p class="text-xs text-gray-500 italic">{{ j.Reflection }}</p>
+          <div v-if="j.reflection" class="mb-2 ml-2 pl-3 border-l-2 border-gray-200">
+            <p class="text-xs text-gray-500 italic">{{ j.reflection }}</p>
           </div>
 
-          <div v-if="j.TeacherComment" class="mb-2 ml-2 pl-3 border-l-2 border-info/30">
+          <div v-if="j.teacher_comment" class="mb-2 ml-2 pl-3 border-l-2 border-info/30">
             <p class="text-[10px] text-gray-400">Komentar Guru:</p>
-            <p class="text-xs text-gray-700">{{ j.TeacherComment }}</p>
+            <p class="text-xs text-gray-700">{{ j.teacher_comment }}</p>
           </div>
 
-          <div v-if="j.DudiComment" class="mb-2 ml-2 pl-3 border-l-2 border-warning/30">
+          <div v-if="j.dudi_comment" class="mb-2 ml-2 pl-3 border-l-2 border-warning/30">
             <p class="text-[10px] text-gray-400">Komentar Anda:</p>
-            <p class="text-xs text-gray-700">{{ j.DudiComment }}</p>
+            <p class="text-xs text-gray-700">{{ j.dudi_comment }}</p>
           </div>
 
-          <div v-if="!j.DudiComment" class="mt-2">
+          <div v-if="!j.dudi_comment" class="mt-2">
             <div class="flex items-center gap-2">
               <input
                 v-model="commentInputs[j.ID || j.id]"
@@ -93,7 +93,7 @@ const commentInputs = reactive({})
 
 const filteredJournals = computed(() => {
   if (!selectedStudent.value) return journals.value
-  return journals.value.filter(j => (j.StudentID || j.student_id) === selectedStudent.value)
+  return journals.value.filter(j => (j.student_id) === selectedStudent.value)
 })
 
 function formatDate(d) {
@@ -124,7 +124,7 @@ async function addComment(j) {
   commenting.value = true
   try {
     await post('/jurnal/comment', { jurnal_id: jid, comment })
-    j.DudiComment = comment
+    j.dudi_comment = comment
     commentInputs[jid] = ''
   } catch (e) {
     alert(e.message)

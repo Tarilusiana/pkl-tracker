@@ -110,13 +110,13 @@
 
           <!-- Comments -->
           <div v-if="hasComments(j)" class="space-y-1.5">
-            <div v-if="j.TeacherComment || j.teacherComment" class="bg-info/5 rounded-lg px-3 py-2">
+            <div v-if="j.teacher_comment" class="bg-info/5 rounded-lg px-3 py-2">
               <p class="text-[10px] text-gray-400">Guru Pembimbing:</p>
-              <p class="text-xs text-gray-700">{{ j.TeacherComment || j.teacherComment }}</p>
+              <p class="text-xs text-gray-700">{{ j.teacher_comment }}</p>
             </div>
-            <div v-if="j.DudiComment || j.dudiComment" class="bg-warning/5 rounded-lg px-3 py-2">
+            <div v-if="j.dudi_comment" class="bg-warning/5 rounded-lg px-3 py-2">
               <p class="text-[10px] text-gray-400">Instruktur:</p>
-              <p class="text-xs text-gray-700">{{ j.DudiComment || j.dudiComment }}</p>
+              <p class="text-xs text-gray-700">{{ j.dudi_comment }}</p>
             </div>
           </div>
         </div>
@@ -153,7 +153,7 @@ function formatDate(d) {
 }
 
 function hasComments(j) {
-  return !!(j.TeacherComment || j.DudiComment || j.teacherComment || j.dudiComment)
+  return !!(j.teacher_comment || j.dudi_comment)
 }
 
 async function fetchJournals() {

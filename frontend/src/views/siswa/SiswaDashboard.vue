@@ -157,7 +157,7 @@ async function fetchStats() {
           id: j.ID || j.id,
           date: new Date(j.Date || j.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }),
           activity: j.Activity || j.activity,
-          hasComment: !!(j.TeacherComment || j.DudiComment || j.teacherComment || j.dudiComment)
+          hasComment: !!(j.teacher_comment || j.dudi_comment)
         }))
       }
     } catch (e) { console.error(e) }
